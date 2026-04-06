@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>智能 GRADE 证据等级评估工具（模板B1：五维透明表｜小舒老师版权版）</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 18px;
+      margin-top: 18px;
+      margin-bottom: 6px;
+    }
+    p {
+      margin: 4px 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px 6px;
+      text-align: left;
+      font-size: 12px;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f5f5f5;
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 12px;
+      padding: 2px 3px;
+    }
+    .btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      margin: 4px 4px 8px 0;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background-color: #f5f5f5;
+    }
+    .btn-primary {
+      background-color: #2d8cf0;
+      color: #fff;
+      border-color: #2d8cf0;
+    }
+    .btn-danger {
+      background-color: #ff4d4f;
+      color: #fff;
+      border-color: #ff4d4f;
+    }
+    .grade-high {
+      color: #007b00;
+      font-weight: bold;
+    }
+    .grade-moderate {
+      color: #b8860b;
+      font-weight: bold;
+    }
+    .grade-low {
+      color: #cc5500;
+      font-weight: bold;
+    }
+    .grade-very-low {
+      color: #b22222;
+      font-weight: bold;
+    }
+    .hint {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .suggest {
+      font-size: 11px;
+      color: #0052d9;
+      display: block;
+      margin-top: 2px;
+    }
+    .container {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      background-color: #f0f0f0;
+      margin-right: 4px;
+    }
+    #sof-container {
+      margin-top: 10px;
+    }
+    #sof-container table {
+      table-layout: auto;
+    }
+    .copyright {
+      font-size: 11px;
+      color: #b22222;
+      margin-bottom: 8px;
+    }
+  </style>
+
+  <script>
+    // 简单授权密码锁（前端级别保护）
+    document.addEventListener('DOMContentLoaded', function () {
+      var correct = 'Shu2025';  // 授权密码
+      var input = prompt('请输入授权密码（如为付费学员，请联系小舒老师获取）：');
+      if (input !== correct) {
+        document.body.innerHTML = '<h2>未授权</h2><p>密码错误或未授权。如需使用本工具，请联系“小舒老师”。</p><p style="font-size:11px;color:#999;">提示：本工具受版权保护，未经许可禁止传播。</p>';
+        // 阻止后续脚本继续使用页面
+        throw new Error('Unauthorized');
+      }
+    });
+  </script>
+</head>
+<body>
+  <h1>智能 GRADE 证据等级评估工具（模板B1：五维透明表）</h1>
+  <p class="copyright">
+    © 2025 小舒老师版权所有。本工具仅供授权用户使用，未经许可不得擅自复制、传播或用于任何商业用途。
+  </p>
+  <p>
+    步骤：<strong>1）填入每个结局的 Meta 结果（k、总样本量、效应量、95%CI、I² 等）→ 2）“一键智能评分”或手动微调 → 3）点击“生成模板B1 SoF表” → 4）整表复制进 Word。</strong>
+  </p>
+  <p class="hint">
+    模板B1输出表结构：结局 / 效应量(95%CI) / 研究数k / 样本量N / 偏倚风险 / 不一致性 / 不精确性 / 间接性 / 发表偏倚 / 最终证据等级。
+  </p>
+
+  <h2>一、操作区</h2>
+  <div>
+    <button class="btn btn-primary" onclick="addOutcomeRow()">+ 新增一个结局</button>
+    <button class="btn" onclick="applySmartToAll()">一键智能评分（应用建议到所有结局）</button>
+    <button class="btn" onclick="recalcAll()">只刷新智能建议和最终等级</button>
+    <button class="btn btn-danger" onclick="resetAll()">清空所有结局</button>
+  </div>
+
+  <div class="hint">
+    建议流程：先批量新增结局行 → 录入每个结局的 Meta 结果信息 → 点击“一键智能评分” → 根据具体情况人工微调 → 最后生成模板B1 SoF表。
+  </div>
+
+  <h2>二、逐结局 GRADE 评估表</h2>
+  <div class="container">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%;">结局名称<br><span class="hint">如：AECOPD 急性加重率</span></th>
+          <th style="width:7%;">研究设计</th>
+          <th style="width:4%;">k</th>
+          <th style="width:5%;">总样本量 N</th>
+          <th style="width:6%;">效应量类型</th>
+          <th style="width:5%;">效应值</th>
+          <th style="width:5%;">95%CI 下限</th>
+          <th style="width:5%;">95%CI 上限</th>
+          <th style="width:4%;">I² %</th>
+          <th style="width:5%;">异质性 P<br><span class="hint">Q 检验P</span></th>
+          <th style="width:7%;">风险偏倚整体判断</th>
+          <th style="width:6%;">发表偏倚判断</th>
+          <th style="width:3%;">起始分</th>
+          <th style="width:6%;">偏倚风险降级</th>
+          <th style="width:6%;">不一致性降级</th>
+          <th style="width:6%;">间接性降级</th>
+          <th style="width:6%;">不精确性降级</th>
+          <th style="width:6%;">发表偏倚降级</th>
+          <th style="width:5%;">其他降级</th>
+          <th style="width:5%;">大效应升级</th>
+          <th style="width:4%;">剂量反应</th>
+          <th style="width:4%;">残余混杂</th>
+          <th style="width:4%;">最终分</th>
+          <th style="width:7%;">最终等级</th>
+        </tr>
+      </thead>
+      <tbody id="grade-tbody">
+      </tbody>
+    </table>
+  </div>
+
+  <h2>三、内置智能规则（简要）</h2>
+  <ul class="hint">
+    <li><span class="badge">起始分</span> RCT = 4（高），观察性研究 = 2（低），其他 = 1。</li>
+    <li><span class="badge">偏倚风险</span> 根据“整体 ROB 判断”给建议：大多低风险 0 级；混合 1 级；大多高风险 2 级。</li>
+    <li><span class="badge">不一致性</span> 根据 I² 与异质性 P 值：I²&lt;30% 通常不降级；30–60% 建议降 1 级；&gt;60–75% 视情况降 1–2 级；&gt;75% 通常降 2 级。</li>
+    <li><span class="badge">不精确性</span> 综合 95%CI 是否跨“无效线”（RR/OR/HR 的 1，MD/SMD 的 0）、区间宽度、总样本量给出 0/1/2 级建议。</li>
+    <li><span class="badge">发表偏倚</span> 根据你对漏斗图 / 小样本效应的主观判断（无 / 怀疑 / 明显）给出 0/1/2 级建议。</li>
+    <li><span class="badge">大效应升级</span> 对比效应量大小和 CI：如 RR≈0.3 且 CI 不跨 1，建议升级 2 级；RR≈0.5 且 CI 不跨 1，建议升级 1 级。</li>
+    <li><span class="badge">间接性、剂量反应、残余混杂、其他降级</span> 需结合具体研究问题，默认不给自动值，只提供 0 起点。</li>
+  </ul>
+
+  <h2>四、模板B1 SoF总结表（五维透明，可直接复制进 Word）</h2>
+  <button class="btn" onclick="buildSoF_B1()">生成模板B1 SoF表</button>
+  <p class="hint">
+    使用方法：点击按钮后，下方会出现一张 SoF 表；用鼠标选中整张表 → Ctrl+C 复制 → 打开 Word → Ctrl+V 粘贴。
+  </p>
+  <div id="sof-container" class="container">
+    <p class="hint">（这里将生成模板B1 SoF 总结表）</p>
+  </div>
+
+  <script>
+    function parseNum(v) {
+      var x = parseFloat(v);
+      return isNaN(x) ? NaN : x;
+    }
+
+    function createSelect(options, className, defaultValue) {
+      var sel = document.createElement('select');
+      sel.className = className;
+      options.forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        sel.appendChild(o);
+      });
+      if (defaultValue !== undefined) {
+        sel.value = defaultValue;
+      }
+      sel.addEventListener('change', recalcAll);
+      return sel;
+    }
+
+    function addOutcomeRow() {
+      var tbody = document.getElementById('grade-tbody');
+      var tr = document.createElement('tr');
+
+      var tdOutcome = document.createElement('td');
+      var inOutcome = document.createElement('input');
+      inOutcome.type = 'text';
+      inOutcome.placeholder = '例如：急性加重率';
+      inOutcome.addEventListener('input', recalcAll);
+      tdOutcome.appendChild(inOutcome);
+      tr.appendChild(tdOutcome);
+
+      var tdDesign = document.createElement('td');
+      var selDesign = createSelect(
+        [
+          {value: '', label: '请选择'},
+          {value: 'RCT', label: 'RCT'},
+          {value: 'OBS', label: '观察性'},
+          {value: 'OTHER', label: '其他'}
+        ],
+        'design-select',
+        ''
+      );
+      tdDesign.appendChild(selDesign);
+      tr.appendChild(tdDesign);
+
+      var tdK = document.createElement('td');
+      var inK = document.createElement('input');
+      inK.type = 'number';
+      inK.min = '0';
+      inK.step = '1';
+      inK.placeholder = 'k';
+      inK.addEventListener('input', recalcAll);
+      tdK.appendChild(inK);
+      tr.appendChild(tdK);
+
+      var tdN = document.createElement('td');
+      var inN = document.createElement('input');
+      inN.type = 'number';
+      inN.min = '0';
+      inN.step = '1';
+      inN.placeholder = 'N';
+      inN.addEventListener('input', recalcAll);
+      tdN.appendChild(inN);
+      tr.appendChild(tdN);
+
+      var tdEffType = document.createElement('td');
+      var selEffType = createSelect(
+        [
+          {value: '', label: '请选择'},
+          {value: 'RR', label: 'RR'},
+          {value: 'OR', label: 'OR'},
+          {value: 'HR', label: 'HR'},
+          {value: 'MD', label: 'MD'},
+          {value: 'SMD', label: 'SMD'},
+          {value: 'OTHER', label: '其他'}
+        ],
+        'effect-type-select',
+        ''
+      );
+      tdEffType.appendChild(selEffType);
+      tr.appendChild(tdEffType);
+
+      var tdEst = document.createElement('td');
+      var inEst = document.createElement('input');
+      inEst.type = 'number';
+      inEst.step = '0.0001';
+      inEst.placeholder = '效应值';
+      inEst.addEventListener('input', recalcAll);
+      tdEst.appendChild(inEst);
+      tr.appendChild(tdEst);
+
+      var tdLo = document.createElement('td');
+      var inLo = document.createElement('input');
+      inLo.type = 'number';
+      inLo.step = '0.0001';
+      inLo.placeholder = '下限';
+      inLo.addEventListener('input', recalcAll);
+      tdLo.appendChild(inLo);
+      tr.appendChild(tdLo);
+
+      var tdHi = document.createElement('td');
+      var inHi = document.createElement('input');
+      inHi.type = 'number';
+      inHi.step = '0.0001';
+      inHi.placeholder = '上限';
+      inHi.addEventListener('input', recalcAll);
+      tdHi.appendChild(inHi);
+      tr.appendChild(tdHi);
+
+      var tdI2 = document.createElement('td');
+      var inI2 = document.createElement('input');
+      inI2.type = 'number';
+      inI2.step = '0.1';
+      inI2.placeholder = 'I²';
+      inI2.addEventListener('input', recalcAll);
+      tdI2.appendChild(inI2);
+      tr.appendChild(tdI2);
+
+      var tdPhet = document.createElement('td');
+      var inPhet = document.createElement('input');
+      inPhet.type = 'number';
+      inPhet.step = '0.0001';
+      inPhet.placeholder = 'P';
+      inPhet.addEventListener('input', recalcAll);
+      tdPhet.appendChild(inPhet);
+      tr.appendChild(tdPhet);
+
+      var tdRob = document.createElement('td');
+      var selRob = createSelect(
+        [
+          {value: '', label: '请选择'},
+          {value: 'LOW', label: '大多低风险'},
+          {value: 'MIX', label: '混合（部分高风险）'},
+          {value: 'HIGH', label: '大多高风险'}
+        ],
+        'rob-overall-select',
+        ''
+      );
+      tdRob.appendChild(selRob);
+      tdRob.appendChild(createSuggestSpan('suggest-rob'));
+      tr.appendChild(tdRob);
+
+      var tdPub = document.createElement('td');
+      var selPub = createSelect(
+        [
+          {value: '', label: '请选择'},
+          {value: 'NONE', label: '无明显发表偏倚'},
+          {value: 'SUSPECT', label: '可能存在'},
+          {value: 'CLEAR', label: '明显存在'}
+        ],
+        'pub-overall-select',
+        ''
+      );
+      tdPub.appendChild(selPub);
+      tdPub.appendChild(createSuggestSpan('suggest-pub'));
+      tr.appendChild(tdPub);
+
+      var tdStart = document.createElement('td');
+      tdStart.className = 'start-score';
+      tdStart.textContent = '';
+      tr.appendChild(tdStart);
+
+      function makeDowngradeTd(className, suggestClass) {
+        var td = document.createElement('td');
+        var sel = createSelect(
+          [
+            {value: '0', label: '0 不降级'},
+            {value: '1', label: '1 降 1 级'},
+            {value: '2', label: '2 降 2 级'}
+          ],
+          className,
+          '0'
+        );
+        td.appendChild(sel);
+        td.appendChild(createSuggestSpan(suggestClass));
+        return td;
+      }
+      function makeUpgrade012Td(className, suggestClass) {
+        var td = document.createElement('td');
+        var sel = createSelect(
+          [
+            {value: '0', label: '0 不升级'},
+            {value: '1', label: '1 升 1 级'},
+            {value: '2', label: '2 升 2 级'}
+          ],
+          className,
+          '0'
+        );
+        td.appendChild(sel);
+        td.appendChild(createSuggestSpan(suggestClass));
+        return td;
+      }
+      function makeUpgrade01Td(className) {
+        var td = document.createElement('td');
+        var sel = createSelect(
+          [
+            {value: '0', label: '0 否'},
+            {value: '1', label: '1 是'}
+          ],
+          className,
+          '0'
+        );
+        td.appendChild(sel);
+        return td;
+      }
+
+      tr.appendChild(makeDowngradeTd('dg-rob-select', 'suggest-rob-detail'));
+      tr.appendChild(makeDowngradeTd('dg-inc-select', 'suggest-inc'));
+
+      var tdInd = makeDowngradeTd('dg-ind-select', 'suggest-ind');
+      tdInd.querySelector('.suggest-ind').textContent = '提示：如人群/干预/结局与临床问题不完全一致时考虑降级';
+      tr.appendChild(tdInd);
+
+      tr.appendChild(makeDowngradeTd('dg-imp-select', 'suggest-imp'));
+      tr.appendChild(makeDowngradeTd('dg-pub-select', 'suggest-pub-detail'));
+
+      var tdOther = makeDowngradeTd('dg-other-select', 'suggest-other');
+      tdOther.querySelector('.suggest-other').textContent = '提示：如有强烈怀疑其他严重局限，可酌情降级';
+      tr.appendChild(tdOther);
+
+      tr.appendChild(makeUpgrade012Td('up-effect-select', 'suggest-up-effect'));
+      tr.appendChild(makeUpgrade01Td('up-dose-select'));
+      tr.appendChild(makeUpgrade01Td('up-conf-select'));
+
+      var tdFinalScore = document.createElement('td');
+      tdFinalScore.className = 'final-score';
+      tdFinalScore.textContent = '';
+      tr.appendChild(tdFinalScore);
+
+      var tdFinalLevel = document.createElement('td');
+      tdFinalLevel.className = 'final-level';
+      tdFinalLevel.textContent = '';
+      tr.appendChild(tdFinalLevel);
+
+      tbody.appendChild(tr);
+      recalcAll();
+    }
+
+    function createSuggestSpan(cls) {
+      var sp = document.createElement('span');
+      sp.className = 'suggest ' + cls;
+      sp.textContent = '';
+      return sp;
+    }
+
+    function resetAll() {
+      if (!confirm('确定要清空所有结局行吗？')) return;
+      var tbody = document.getElementById('grade-tbody');
+      tbody.innerHTML = '';
+      addOutcomeRow();
+      document.getElementById('sof-container').innerHTML = '<p class="hint">（这里将生成模板B1 SoF 总结表）</p>';
+    }
+
+    function calcSmartSuggestion(tr) {
+      var design = tr.querySelector('.design-select') ? tr.querySelector('.design-select').value : '';
+      var startScore = '';
+      if (design === 'RCT') startScore = 4;
+      else if (design === 'OBS') startScore = 2;
+      else if (design === 'OTHER') startScore = 1;
+
+      var N = parseNum(tr.querySelector('input[placeholder="N"]').value);
+      var effType = tr.querySelector('.effect-type-select').value;
+      var est = parseNum(tr.querySelector('input[placeholder="效应值"]').value);
+      var lo = parseNum(tr.querySelector('input[placeholder="下限"]').value);
+      var hi = parseNum(tr.querySelector('input[placeholder="上限"]').value);
+      var I2 = parseNum(tr.querySelector('input[placeholder="I²"]').value);
+      var Phet = parseNum(tr.querySelector('input[placeholder="P"]').value);
+
+      var robOverall = tr.querySelector('.rob-overall-select').value;
+      var pubOverall = tr.querySelector('.pub-overall-select').value;
+
+      var dgRob = 0;
+      var dgRobText = '';
+      if (robOverall === 'LOW') {
+        dgRob = 0;
+        dgRobText = '大多数研究偏倚风险低，通常不降级';
+      } else if (robOverall === 'MIX') {
+        dgRob = 1;
+        dgRobText = '研究质量参差不齐，建议降 1 级';
+      } else if (robOverall === 'HIGH') {
+        dgRob = 2;
+        dgRobText = '大部分研究偏倚风险高，通常降 2 级';
+      } else {
+        dgRob = 0;
+        dgRobText = '未选择整体 ROB，暂不自动降级';
+      }
+
+      var dgInc = 0;
+      var dgIncText = '';
+      if (isNaN(I2)) {
+        dgInc = 0;
+        dgIncText = '未录入 I²，无法自动判断不一致性';
+      } else {
+        if (I2 < 30) {
+          dgInc = 0;
+          dgIncText = 'I² < 30%，通常不降级';
+        } else if (I2 < 60) {
+          dgInc = 1;
+          dgIncText = 'I² 30–60%，建议考虑降 1 级';
+        } else if (I2 < 75) {
+          dgInc = 1;
+          if (!isNaN(Phet) && Phet < 0.1) {
+            dgInc = 2;
+            dgIncText = 'I² 60–75% 且异质性 P < 0.1，建议考虑降 1–2 级，这里给出 2 级';
+          } else {
+            dgIncText = 'I² 60–75%，建议至少降 1 级';
+          }
+        } else {
+          dgInc = 2;
+          dgIncText = 'I² ≥ 75%，通常需要降 2 级';
+        }
+      }
+
+      var crossNull = false;
+      var width = NaN;
+      if (!isNaN(lo) && !isNaN(hi)) {
+        width = hi - lo;
+        var nullVal = (effType === 'RR' || effType === 'OR' || effType === 'HR') ? 1 : 0;
+        if (lo < nullVal && hi > nullVal) crossNull = true;
+      }
+
+      var dgImp = 0;
+      var dgImpText = '';
+      if (isNaN(est) || isNaN(lo) || isNaN(hi)) {
+        dgImp = 0;
+        dgImpText = '缺少完整效应值及 CI，无法自动判断不精确性';
+      } else {
+        var Nsafe = isNaN(N) ? 0 : N;
+        if (effType === 'RR' || effType === 'OR' || effType === 'HR') {
+          if (crossNull) {
+            if (width > 1 || Nsafe < 200) {
+              dgImp = 2;
+              dgImpText = '95%CI 跨 1 且区间较宽或样本量较小，建议降 2 级';
+            } else {
+              dgImp = 1;
+              dgImpText = '95%CI 跨 1，建议至少降 1 级';
+            }
+          } else {
+            if (width <= 0.5 && Nsafe >= 300) {
+              dgImp = 0;
+              dgImpText = 'CI 不跨 1 且区间较窄（≤0.5）且样本量较大（≥300），通常不降级';
+            } else if (width > 0.8 || Nsafe < 200) {
+              dgImp = 1;
+              dgImpText = 'CI 不跨 1 但区间偏宽或样本量偏小，建议降 1 级';
+            } else if (width > 1.5 || Nsafe < 100) {
+              dgImp = 2;
+              dgImpText = 'CI 不跨 1 但极宽，且/或样本量很小，建议考虑降 2 级';
+            } else {
+              dgImp = 0;
+              dgImpText = 'CI 不跨 1 且宽度与样本量尚可，一般不降级';
+            }
+          }
+        } else {
+          if (crossNull) {
+            if (width > 0.8 || Nsafe < 200) {
+              dgImp = 2;
+              dgImpText = '95%CI 跨 0 且区间宽或样本小，建议降 2 级';
+            } else {
+              dgImp = 1;
+              dgImpText = '95%CI 跨 0，建议降 1 级';
+            }
+          } else {
+            if (width <= 0.5 && Nsafe >= 300) {
+              dgImp = 0;
+              dgImpText = 'CI 不跨 0 且较窄且 N 较大，一般不降级';
+            } else if (width > 0.8 || Nsafe < 200) {
+              dgImp = 1;
+              dgImpText = 'CI 不跨 0 但偏宽或 N 偏小，建议降 1 级';
+            } else if (width > 1.2 || Nsafe < 100) {
+              dgImp = 2;
+              dgImpText = 'CI 很宽且 N 很小，建议降 2 级';
+            } else {
+              dgImp = 0;
+              dgImpText = 'CI 不跨 0 且宽度与 N 尚可，一般不降级';
+            }
+          }
+        }
+      }
+
+      var dgPub = 0;
+      var dgPubText = '';
+      if (pubOverall === 'NONE') {
+        dgPub = 0;
+        dgPubText = '未见明显发表偏倚，不降级';
+      } else if (pubOverall === 'SUSPECT') {
+        dgPub = 1;
+        dgPubText = '可能存在发表偏倚，建议降 1 级';
+      } else if (pubOverall === 'CLEAR') {
+        dgPub = 2;
+        dgPubText = '明显发表偏倚，通常降 2 级';
+      } else {
+        dgPub = 0;
+        dgPubText = '未选择发表偏倚判断，暂不自动降级';
+      }
+
+      var upEffect = 0;
+      var upEffectText = '';
+      if (effType === 'RR' || effType === 'OR' || effType === 'HR') {
+        if (!isNaN(est) && !crossNull && !isNaN(lo) && !isNaN(hi)) {
+          var ratio = est;
+          var benefitSide = ratio < 1 ? ratio : 1 / ratio;
+          if (benefitSide <= 0.33 && ((ratio < 1 && hi < 1) || (ratio > 1 && lo > 1))) {
+            upEffect = 2;
+            upEffectText = '效应量很大（类似 RR≈0.3 或 3）且 CI 不跨 1，建议升级 2 级';
+          } else if (benefitSide <= 0.5 && ((ratio < 1 && hi < 1) || (ratio > 1 && lo > 1))) {
+            upEffect = 1;
+            upEffectText = '效应量较大（类似 RR≈0.5 或 2）且 CI 不跨 1，建议升级 1 级';
+          } else {
+            upEffect = 0;
+            upEffectText = '效应量尚可但未达到典型“大效应”标准，一般不自动升级';
+          }
+        } else {
+          upEffect = 0;
+          upEffectText = 'CI 跨 1 或效应值信息不足，不建议因效应量升级';
+        }
+      } else {
+        upEffect = 0;
+        if (effType === 'MD' || effType === 'SMD') {
+          upEffectText = '连续结局是否“大效应”需结合临床意义，建议人工判断';
+        } else {
+          upEffectText = '效应量类型为“其他”，不自动判断大效应升级';
+        }
+      }
+
+      return {
+        startScore: startScore,
+        dgRob: dgRob,
+        dgRobText: dgRobText,
+        dgInc: dgInc,
+        dgIncText: dgIncText,
+        dgImp: dgImp,
+        dgImpText: dgImpText,
+        dgPub: dgPub,
+        dgPubText: dgPubText,
+        upEffect: upEffect,
+        upEffectText: upEffectText
+      };
+    }
+
+    function recalcAll() {
+      var tbody = document.getElementById('grade-tbody');
+      var rows = tbody.querySelectorAll('tr');
+
+      rows.forEach(function (tr) {
+        var suggestion = calcSmartSuggestion(tr);
+
+        var tdStart = tr.querySelector('.start-score');
+        if (suggestion.startScore === '') {
+          tdStart.textContent = '';
+        } else {
+          tdStart.textContent = suggestion.startScore;
+        }
+
+        var spRob = tr.querySelector('.suggest-rob');
+        if (spRob) spRob.textContent = suggestion.dgRobText;
+        var spRobDetail = tr.querySelector('.suggest-rob-detail');
+        if (spRobDetail) spRobDetail.textContent = '智能建议：降级 ' + suggestion.dgRob + ' 级';
+        var spInc = tr.querySelector('.suggest-inc');
+        if (spInc) spInc.textContent = suggestion.dgIncText ? '智能建议：' + suggestion.dgIncText : '';
+        var spImp = tr.querySelector('.suggest-imp');
+        if (spImp) spImp.textContent = suggestion.dgImpText ? '智能建议：' + suggestion.dgImpText : '';
+        var spPub = tr.querySelector('.suggest-pub');
+        if (spPub) spPub.textContent = suggestion.dgPubText;
+        var spPubDetail = tr.querySelector('.suggest-pub-detail');
+        if (spPubDetail) spPubDetail.textContent = '智能建议：降级 ' + suggestion.dgPub + ' 级';
+        var spUpEffect = tr.querySelector('.suggest-up-effect');
+        if (spUpEffect) spUpEffect.textContent = suggestion.upEffectText ? suggestion.upEffectText : '';
+
+        var startScore = suggestion.startScore;
+        var finalScoreTd = tr.querySelector('.final-score');
+        var finalLevelTd = tr.querySelector('.final-level');
+
+        if (startScore === '') {
+          finalScoreTd.textContent = '';
+          finalLevelTd.textContent = '';
+          finalLevelTd.className = 'final-level';
+          return;
+        }
+
+        function getIntFromSelect(cls) {
+          var sel = tr.querySelector('.' + cls);
+          return sel ? parseInt(sel.value || '0', 10) : 0;
+        }
+
+        var dgRobVal = getIntFromSelect('dg-rob-select');
+        var dgIncVal = getIntFromSelect('dg-inc-select');
+        var dgIndVal = getIntFromSelect('dg-ind-select');
+        var dgImpVal = getIntFromSelect('dg-imp-select');
+        var dgPubVal = getIntFromSelect('dg-pub-select');
+        var dgOtherVal = getIntFromSelect('dg-other-select');
+
+        var upEffectVal = getIntFromSelect('up-effect-select');
+        var upDoseVal = getIntFromSelect('up-dose-select');
+        var upConfVal = getIntFromSelect('up-conf-select');
+
+        var downgradeTotal = dgRobVal + dgIncVal + dgIndVal + dgImpVal + dgPubVal + dgOtherVal;
+        var upgradeTotal = upEffectVal + upDoseVal + upConfVal;
+
+        var rawScore = startScore - downgradeTotal + upgradeTotal;
+        if (rawScore > 4) rawScore = 4;
+        if (rawScore < 1) rawScore = 1;
+
+        finalScoreTd.textContent = rawScore;
+
+        var text = '';
+        var cls = 'final-level';
+        if (rawScore === 4) {
+          text = '高 (High)';
+          cls += ' grade-high';
+        } else if (rawScore === 3) {
+          text = '中等 (Moderate)';
+          cls += ' grade-moderate';
+        } else if (rawScore === 2) {
+          text = '低 (Low)';
+          cls += ' grade-low';
+        } else if (rawScore === 1) {
+          text = '很低 (Very low)';
+          cls += ' grade-very-low';
+        }
+        finalLevelTd.textContent = text;
+        finalLevelTd.className = cls;
+      });
+    }
+
+    function applySmartToAll() {
+      var tbody = document.getElementById('grade-tbody');
+      var rows = tbody.querySelectorAll('tr');
+
+      rows.forEach(function (tr) {
+        var suggestion = calcSmartSuggestion(tr);
+        var selRob = tr.querySelector('.dg-rob-select');
+        if (selRob) selRob.value = String(suggestion.dgRob);
+        var selInc = tr.querySelector('.dg-inc-select');
+        if (selInc) selInc.value = String(suggestion.dgInc);
+        var selImp = tr.querySelector('.dg-imp-select');
+        if (selImp) selImp.value = String(suggestion.dgImp);
+        var selPub = tr.querySelector('.dg-pub-select');
+        if (selPub) selPub.value = String(suggestion.dgPub);
+        var selUpEff = tr.querySelector('.up-effect-select');
+        if (selUpEff) selUpEff.value = String(suggestion.upEffect);
+      });
+
+      recalcAll();
+    }
+
+    function buildSoF_B1() {
+      recalcAll();
+
+      var tbody = document.getElementById('grade-tbody');
+      var rows = tbody.querySelectorAll('tr');
+      var sofHTML = '';
+      sofHTML += '<table><thead><tr>';
+      sofHTML += '<th>结局</th>';
+      sofHTML += '<th>效应量（95%CI）</th>';
+      sofHTML += '<th>研究数 (k)</th>';
+      sofHTML += '<th>样本量 (N)</th>';
+      sofHTML += '<th>偏倚风险</th>';
+      sofHTML += '<th>不一致性</th>';
+      sofHTML += '<th>不精确性</th>';
+      sofHTML += '<th>间接性</th>';
+      sofHTML += '<th>发表偏倚</th>';
+      sofHTML += '<th>最终证据等级</th>';
+      sofHTML += '</tr></thead><tbody>';
+
+      rows.forEach(function (tr) {
+        var outcome = tr.querySelector('td:nth-child(1) input') ? tr.querySelector('td:nth-child(1) input').value.trim() : '';
+        if (!outcome) return;
+
+        var kVal = tr.querySelector('input[placeholder="k"]') ? tr.querySelector('input[placeholder="k"]').value.trim() : '';
+        var NVal = tr.querySelector('input[placeholder="N"]') ? tr.querySelector('input[placeholder="N"]').value.trim() : '';
+        var effType = tr.querySelector('.effect-type-select') ? tr.querySelector('.effect-type-select').value : '';
+        var est = parseNum(tr.querySelector('input[placeholder="效应值"]').value);
+        var lo = parseNum(tr.querySelector('input[placeholder="下限"]').value);
+        var hi = parseNum(tr.querySelector('input[placeholder="上限"]').value);
+        var finalScoreTd = tr.querySelector('.final-score');
+        var finalLevelTd = tr.querySelector('.final-level');
+        if (!finalScoreTd || !finalLevelTd || !finalScoreTd.textContent) return;
+
+        var effText = '—';
+        if (effType && !isNaN(est) && !isNaN(lo) && !isNaN(hi)) {
+          effText = effType + ' ' + est.toFixed(2) + ' (' + lo.toFixed(2) + '–' + hi.toFixed(2) + ')';
+        }
+
+        function labelForDowngrade(val) {
+          var v = parseInt(val || '0', 10);
+          if (v === 0) return '不降级';
+          if (v === 1) return '降 1 级';
+          if (v === 2) return '降 2 级';
+          return '';
+        }
+
+        var dgRobVal = (tr.querySelector('.dg-rob-select') || {value:'0'}).value;
+        var dgIncVal = (tr.querySelector('.dg-inc-select') || {value:'0'}).value;
+        var dgIndVal = (tr.querySelector('.dg-ind-select') || {value:'0'}).value;
+        var dgImpVal = (tr.querySelector('.dg-imp-select') || {value:'0'}).value;
+        var dgPubVal = (tr.querySelector('.dg-pub-select') || {value:'0'}).value;
+
+        var robLabel = labelForDowngrade(dgRobVal);
+        var incLabel = labelForDowngrade(dgIncVal);
+        var indLabel = labelForDowngrade(dgIndVal);
+        var impLabel = labelForDowngrade(dgImpVal);
+        var pubLabel = labelForDowngrade(dgPubVal);
+
+        var finalGrade = finalLevelTd.textContent || '';
+
+        sofHTML += '<tr>';
+        sofHTML += '<td>' + outcome + '</td>';
+        sofHTML += '<td>' + effText + '</td>';
+        sofHTML += '<td>' + (kVal || '') + '</td>';
+        sofHTML += '<td>' + (NVal || '') + '</td>';
+        sofHTML += '<td>' + robLabel + '</td>';
+        sofHTML += '<td>' + incLabel + '</td>';
+        sofHTML += '<td>' + impLabel + '</td>';
+        sofHTML += '<td>' + indLabel + '</td>';
+        sofHTML += '<td>' + pubLabel + '</td>';
+        sofHTML += '<td>' + finalGrade + '</td>';
+        sofHTML += '</tr>';
+      });
+
+      sofHTML += '</tbody></table>';
+
+      var container = document.getElementById('sof-container');
+      container.innerHTML = sofHTML;
+    }
+
+    window.onload = function () {
+      addOutcomeRow();
+    };
+  </script>
+</body>
+</html>
